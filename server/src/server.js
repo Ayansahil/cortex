@@ -4,21 +4,16 @@ import database from './core/database/connection.js';
 import './workers/tagging.worker.js';
 import './workers/embedding.worker.js';
 
-const startServer = async () => {
-  try {
-    await database.connect();
-    console.log('Database connected successfully ✅');
+// ✅ Always use Render port in production, fallback for local
+const PORT = process.env.PORT || 3000;
 
-    const PORT = process.env.PORT || config.port || 3000;
+// ✅ Start server FIRST 
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🌍 Environment: ${config.env}`);
+});
 
-    app.listen(PORT,'0.0.0.0', () => {
-      console.log(`Server running on port ${PORT} ✅`);
-      console.log(`Environment: ${config.env} ✅`);
-    });
-  } catch (error) {
-    console.error('Failed to start server ❌', error);
-    process.exit(1);
-  }
-};
-
-startServer();
+// ✅ Connect DB AFTER server starts (non-blocking)
+database.connect()
+  .then(() => console.log('Database connected successfully ✅'))
+  .catch((err) => console.error('Database connection failed ❌', err));
