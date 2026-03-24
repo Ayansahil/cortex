@@ -1,6 +1,8 @@
 import app from './app.js';
 import config from './core/config/env.config.js';
 import database from './core/database/connection.js';
+import './workers/tagging.worker.js';
+import './workers/embedding.worker.js';
 
 const startServer = async () => {
   try {

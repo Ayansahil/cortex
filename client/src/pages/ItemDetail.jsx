@@ -10,6 +10,8 @@ import {
   Highlighter,
   MessageSquare,
   Clock,
+  Twitter,
+  Plus
 } from "lucide-react";
 import * as itemsApi from "../api/items.api";
 import * as hApi from "../api/search-highlights.api";
@@ -58,8 +60,15 @@ const ItemDetail = () => {
   if (isLoading) return <div className="h-96 flex items-center justify-center font-mono text-gray-500 animate-pulse">Retrieving item memory...</div>;
   if (error) return <div className="text-red-400">Error loading item.</div>;
 
-  const domain = item.url ? new URL(item.url).hostname.replace("www.", "") : "Note";
-  const faviconDomain = domain === "youtu.be" ? "youtube.com" : domain;
+  let domain = "note";
+  try {
+    if (item.url && item.url.startsWith('http')) {
+      domain = new URL(item.url).hostname.replace("www.", "");
+    }
+  } catch (err) {
+    console.warn("Invalid URL for item:", item.url);
+  }
+  const faviconDomain = (domain === "youtu.be" || domain === "youtube.com") ? "youtube.com" : domain;
 
   // detect types
   const isYouTube = item.type === "video";
@@ -78,11 +87,18 @@ const ItemDetail = () => {
         <header className="mb-10">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-12 h-12 rounded-2xl bg-indigo/20 flex items-center justify-center text-indigo">
-              <img 
-                src={`https://www.google.com/s2/favicons?sz=64&domain=${faviconDomain}`}
-                alt="" 
-                className="w-6 h-6 rounded-sm"
-              />
+              {item.url && item.url.startsWith('http') ? (
+                <img 
+                  src={`https://www.google.com/s2/favicons?sz=64&domain=${faviconDomain}`}
+                  alt="" 
+                  className="w-6 h-6 rounded-sm"
+                  onError={(e) => { e.target.style.display = "none"; }}
+                />
+              ) : (
+                <div className="w-6 h-6 rounded-sm bg-white/5 flex items-center justify-center">
+                  <span className="text-[10px] text-gray-500 font-bold">?</span>
+                </div>
+              )}
             </div>
             <div>
               <p className="text-gray-500 font-mono text-[10px] uppercase tracking-tighter flex items-center gap-2">
@@ -177,11 +193,43 @@ const ItemDetail = () => {
         {isImage && (item.thumbnail || item.filePath) && (
           <div className="mb-8 rounded-2xl overflow-hidden bg-black/20">
             <img
-              src={item.thumbnail || `http://localhost:5001/${item.filePath}`}
+              src={item.thumbnail || `http://localhost:3000/${item.filePath}`}
               alt={item.title}
               className="w-full max-h-[600px] object-contain"
               onError={(e) => { e.target.style.display = "none"; }}
             />
+          </div>
+        )}
+
+        {/* ── FIX: Tweet Card ── */}
+        {item.type === 'tweet' && (
+          <div className="mb-8 p-8 glass rounded-[2rem] border border-white/10 bg-gradient-to-br from-indigo/5 to-transparent relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Twitter size={80} className="text-indigo" />
+            </div>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-full bg-indigo/20 flex items-center justify-center text-indigo">
+                <Twitter size={24} />
+              </div>
+              <div>
+                <h4 className="font-bold text-lg">X / Twitter Post</h4>
+                <p className="text-gray-500 text-xs font-mono uppercase tracking-widest">Captured from social stream</p>
+              </div>
+            </div>
+            <div className="prose prose-invert max-w-none text-gray-300 italic mb-8 text-xl leading-relaxed">
+               "{item.content || item.excerpt || 'No tweet content available'}"
+            </div>
+            <div className="flex items-center justify-between pt-6 border-t border-white/5">
+              <span className="text-gray-500 text-xs font-mono">SAVED {format(new Date(item.createdAt), "MMM d, yyyy")}</span>
+              <a 
+                href={item.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-indigo hover:text-indigo-light font-bold text-sm transition-colors"
+              >
+                View original tweet <ExternalLink size={14} />
+              </a>
+            </div>
           </div>
         )}
 
@@ -209,7 +257,7 @@ const ItemDetail = () => {
         <section className="mt-20 pt-10 border-t border-white/5">
           <h2 className="text-2xl font-bold font-heading mb-8">Related Items</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {relatedItems?.items?.slice(0, 4).filter(i => i._id !== item._id).map((rItem, i) => (
+            {relatedItems?.items?.filter(i => (i._id || i.id) !== item._id).slice(0, 4).map((rItem, i) => (
               <ItemCard key={rItem._id || rItem.id || i} item={rItem} index={i} />
             ))}
           </div>
@@ -268,9 +316,5 @@ const ItemDetail = () => {
     </div>
   );
 };
-
-const Plus = ({ size }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-);
 
 export default ItemDetail;

@@ -1,10 +1,9 @@
 import dotenv from 'dotenv';
-
 dotenv.config();
 
 const config = {
   env: process.env.NODE_ENV || 'development',
-  port: process.env.PORT || 5000,
+  port: process.env.PORT || 3000,
   apiVersion: process.env.API_VERSION || 'v1',
   
   database: {
@@ -14,7 +13,7 @@ const config = {
   
   jwt: {
     secret: process.env.JWT_SECRET || 'fallback-secret-key',
-    expire: process.env.JWT_EXPIRE || process.env.JWT_EXPIRES_IN || '7d',
+    expire: process.env.JWT_EXPIRE || '7d',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret',
     refreshExpire: process.env.JWT_REFRESH_EXPIRE || '30d',
   },
@@ -27,8 +26,17 @@ const config = {
   
   openai: {
     apiKey: process.env.OPENAI_API_KEY || '',
-    embeddingModel: process.env.EMBEDDING_MODEL || 'text-embedding-3-small',
-    embeddingDimensions: parseInt(process.env.EMBEDDING_DIMENSIONS) || 1536,
+    baseURL: process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1',
+    model: process.env.OPENAI_MODEL || 'google/gemma-3-27b-it:free',
+    embeddingModel: process.env.EMBEDDING_MODEL || 'gemini-embedding-001',
+    embeddingDimensions: parseInt(process.env.EMBEDDING_DIMENSIONS) || 768,
+  },
+
+  // FIX: Gemini for embeddings
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || '',
+    embeddingModel: process.env.EMBEDDING_MODEL || 'gemini-embedding-001',
+    embeddingDimensions: parseInt(process.env.EMBEDDING_DIMENSIONS) || 768,
   },
   
   upload: {

@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { 
   FileText, Twitter, Youtube, FileJson, 
-  Image as ImageIcon, Layers, Trash2, Share2
+  Image as ImageIcon, Layers, Trash2, Share2, Sparkles
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -24,10 +24,14 @@ const ItemCard = ({ item, index, isResurface = false }) => {
   const queryClient = useQueryClient();
   const Icon = typeIcons[item.type] || FileText;
 
-  let domain = "Note";
+  let domain = "note";
   try {
-    if (item.url) domain = new URL(item.url).hostname.replace("www.", "");
-  } catch {}
+    if (item.url && item.url.startsWith('http')) {
+      domain = new URL(item.url).hostname.replace("www.", "");
+    }
+  } catch (err) {
+    console.warn("Invalid URL for item:", item.url);
+  }
 
   const handleDelete = async (e) => {
     e.stopPropagation();
@@ -67,7 +71,7 @@ const ItemCard = ({ item, index, isResurface = false }) => {
       {hasThumbnail && (
         <div className="w-full h-[120px] flex-shrink-0 bg-black/20">
           <img
-            src={item.thumbnail || `http://localhost:5001/${item.filePath}`}
+            src={item.thumbnail || `http://localhost:3000/${item.filePath}`}
             alt={item.title}
             className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
             onError={(e) => { e.target.parentElement.style.display = "none"; }}
@@ -133,10 +137,16 @@ const ItemCard = ({ item, index, isResurface = false }) => {
         {/* Footer */}
         <div className="px-3 sm:px-5 py-3 bg-white/5 border-t border-white/5 flex items-center justify-between flex-shrink-0 gap-4">
           <span className="text-[10px] font-mono text-gray-400 whitespace-nowrap shrink-0">
-            {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+            {(() => {
+              try {
+                return item.createdAt ? formatDistanceToNow(new Date(item.createdAt), { addSuffix: true }) : "recently";
+              } catch (e) {
+                return "recently";
+              }
+            })()}
           </span>
           <div className="flex items-center gap-2 min-w-0 flex-1 justify-end">
-            {item.url && (
+            {item.url && item.url.startsWith('http') && (
               <img
                 src={`https://www.google.com/s2/favicons?sz=64&domain=${domain}`}
                 alt=""

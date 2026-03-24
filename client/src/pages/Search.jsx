@@ -5,6 +5,7 @@ import * as searchApi from "../api/search-highlights.api";
 import SearchBar from "../components/SearchBar";
 import ItemCard from "../components/ItemCard";
 import EmptyState from "../components/EmptyState";
+import { useUIStore } from "../stores/uiStore";
 import { cn } from "../utils/cn";
 
 const typeIcons = {
@@ -16,6 +17,7 @@ const typeIcons = {
 };
 
 const Search = () => {
+  const incrementSearchCount = useUIStore((state) => state.incrementSearchCount);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
@@ -24,15 +26,24 @@ const Search = () => {
     return () => clearTimeout(timer);
   }, [query]);
 
-  const { data: results, isLoading } = useQuery({
+  const { data: results, isLoading, isSuccess } = useQuery({
     queryKey: ["search", debouncedQuery],
     queryFn: () => query ? searchApi.searchItems(debouncedQuery) : Promise.resolve([]),
     enabled: !!debouncedQuery,
   });
 
-  const groupedResults = results?.reduce((acc, item) => {
-    if (!acc[item.type]) acc[item.type] = [];
-    acc[item.type].push(item);
+  useEffect(() => {
+    if (isSuccess && debouncedQuery) {
+      incrementSearchCount();
+    }
+  }, [isSuccess, debouncedQuery, incrementSearchCount]);
+
+  const searchItems = results?.items || (Array.isArray(results) ? results : []);
+
+  const groupedResults = searchItems.reduce((acc, item) => {
+    const type = item.type || "other";
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(item);
     return acc;
   }, {});
 
@@ -50,7 +61,7 @@ const Search = () => {
         </div>
       )}
 
-      {!isLoading && results?.length > 0 && (
+      {!isLoading && searchItems.length > 0 && (
         <div className="space-y-16">
           {Object.entries(groupedResults).map(([type, items]) => {
             const Icon = typeIcons[type] || FileText;
@@ -75,7 +86,7 @@ const Search = () => {
         </div>
       )}
 
-      {!isLoading && debouncedQuery && results?.length === 0 && (
+      {!isLoading && debouncedQuery && searchItems.length === 0 && (
         <EmptyState 
           title="No fragments found" 
           message={`We couldn't find anything matching "${debouncedQuery}" in your brain.`} 

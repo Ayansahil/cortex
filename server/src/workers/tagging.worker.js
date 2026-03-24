@@ -1,4 +1,5 @@
 import { Worker } from 'bullmq';
+console.log('Tagging worker started 🚀');
 import Redis from 'ioredis';
 import config from '../core/config/env.config.js';
 import { Item } from '../core/database/models/index.js';
@@ -15,24 +16,27 @@ const taggingWorker = new Worker(
   config.workers.taggingQueue,
   async (job) => {
     try {
-      const { itemId } = job.data;
+      const { itemId, highlightId } = job.data;
 
-      const item = await Item.findById(itemId);
-
-      if (!item) {
-        throw new Error(`Item ${itemId} not found`);
+      if (itemId) {
+        const item = await Item.findById(itemId);
+        if (!item) throw new Error(`Item ${itemId} not found`);
+        const { tags, topics } = await generateTags(item.title, item.content || '');
+        item.autoTags = tags;
+        item.topics = topics;
+        await item.save();
+        console.log(`Completed tagging for item ${itemId}`);
+      } else if (highlightId) {
+        const { Highlight } = await import('../core/database/models/index.js');
+        const highlight = await Highlight.findById(highlightId);
+        if (!highlight) throw new Error(`Highlight ${highlightId} not found`);
+        const { tags } = await generateTags('', highlight.text);
+        highlight.tags = tags;
+        await highlight.save();
+        console.log(`Completed tagging for highlight ${highlightId}`);
       }
 
-      const { tags, topics } = await generateTags(item.title, item.content || '');
-
-      item.autoTags = tags;
-      item.topics = topics;
-
-      await item.save();
-
-      console.log(`Completed tagging for item ${itemId}`);
-
-      return { success: true, itemId };
+      return { success: true };
     } catch (error) {
       console.error(`Error tagging item:`, error);
       throw error;

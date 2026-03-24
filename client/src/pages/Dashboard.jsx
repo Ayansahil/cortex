@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useItemsStore } from "../stores/itemsStore";
 import { useCollectionsStore, useHighlightsStore } from "../stores/dataStore";
 import { useAuthStore } from "../stores/authStore";
+import { useUIStore } from "../stores/uiStore";
 import { motion } from "framer-motion";
 import { 
   FileText, 
@@ -35,6 +36,7 @@ const Dashboard = () => {
   const { items, fetchItems, isLoading } = useItemsStore();
   const { collections, fetchCollections } = useCollectionsStore();
   const { highlights, fetchHighlights } = useHighlightsStore();
+  const searchCount = useUIStore((state) => state.searchCount);
 
   useEffect(() => {
     fetchItems();
@@ -53,8 +55,8 @@ const Dashboard = () => {
   const stats = [
     { icon: FileText, label: "Total Items", value: items?.length || 0, colorClass: "bg-indigo/20 text-indigo" },
     { icon: Layers, label: "Collections", value: collections?.length || 0, colorClass: "bg-amber/20 text-amber" },
-    { icon: Highlighter, label: "Highlights", value: highlights?.length || 0, colorClass: "bg-sky-500/20 text-sky-500" },
-    { icon: Search, label: "Searches", value: 124, colorClass: "bg-emerald-500/20 text-emerald-500" },
+    { icon: Highlighter, label: "Highlights", value: highlights?.items?.length ?? highlights?.length ?? 0, colorClass: "bg-sky-500/20 text-sky-500" },
+    { icon: Search, label: "Searches", value: searchCount, colorClass: "bg-emerald-500/20 text-emerald-500" },
   ];
 
   return (

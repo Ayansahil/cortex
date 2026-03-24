@@ -36,6 +36,13 @@ export const useCollectionsStore = create((set) => ({
       collections: state.collections.filter((c) => c.id !== id && c._id !== id),
     }));
   },
+  
+  addItemToCollection: async (collectionId, itemId) => {
+    await collectionsApi.addItemToCollection(collectionId, itemId);
+    // Refetch to update item counts
+    const data = await collectionsApi.getCollections();
+    set({ collections: data });
+  },
 }));
 
 export const useHighlightsStore = create((set) => ({

@@ -9,6 +9,7 @@ export const useUIStore = create((set) => ({
     collection: null,
   },
   searchQuery: "",
+  searchCount: 0,
   
   setSidebarOpen: (isOpen) => set({ sidebarOpen: isOpen }),
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
@@ -22,4 +23,5 @@ export const useUIStore = create((set) => ({
   }),
   
   setSearchQuery: (query) => set({ searchQuery: query }),
+  incrementSearchCount: () => set((state) => ({ searchCount: state.searchCount + 1 })),
 }));

@@ -25,7 +25,8 @@ const extractTweetMetadata = (url) => {
       type: 'tweet',
       source: 'Twitter/X',
       thumbnail: null,
-      description: `Saved tweet from @${username}`,
+      excerpt: `A post by @${username} on X (formerly Twitter).`,
+      content: `This is a saved tweet from @${username}. Source: ${url}`,
       tweetId,
     };
   } catch {
@@ -34,6 +35,8 @@ const extractTweetMetadata = (url) => {
       type: 'tweet',
       source: 'Twitter/X',
       thumbnail: null,
+      excerpt: 'A post on X (formerly Twitter).',
+      content: `A tweet saved from ${url}`,
     };
   }
 };
@@ -127,9 +130,12 @@ export class ItemsService {
       }
     }
 
-    // FIX 8: Make sure title always exists
+    // FIX 8: Make sure title and type always exist
     if (!processedData.title) {
       processedData.title = processedData.url || 'Untitled Item';
+    }
+    if (!processedData.type) {
+      processedData.type = 'note';
     }
 
     processedData.user = userId;

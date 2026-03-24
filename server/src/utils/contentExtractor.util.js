@@ -16,12 +16,12 @@ export const extractArticleContent = async (url) => {
     $('script, style, nav, header, footer, aside, .ad, .advertisement').remove();
 
     const title = $('title').text() || $('h1').first().text() || 'Untitled';
-    const author = $('meta[name="author"]').attr('content') || 
-                  $('meta[property="article:author"]').attr('content') || '';
-    const description = $('meta[name="description"]').attr('content') || 
-                       $('meta[property="og:description"]').attr('content') || '';
-    const image = $('meta[property="og:image"]').attr('content') || 
-                 $('meta[name="twitter:image"]').attr('content') || '';
+    const author = $('meta[name="author"]').attr('content') ||
+      $('meta[property="article:author"]').attr('content') || '';
+    const description = $('meta[name="description"]').attr('content') ||
+      $('meta[property="og:description"]').attr('content') || '';
+    const image = $('meta[property="og:image"]').attr('content') ||
+      $('meta[name="twitter:image"]').attr('content') || '';
     const content = $('article').text() || $('main').text() || $('body').text() || '';
     const cleanContent = content.replace(/\s+/g, ' ').trim();
 
@@ -59,19 +59,20 @@ export const extractPDFContent = async (filePath) => {
 
 export const extractYouTubeMetadata = async (url) => {
   const videoIdMatch = url.match(/(?:youtube\.com\/watch\?.*v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([^&\s]+)/);
-  
+
   if (!videoIdMatch) {
     throw new Error('Invalid YouTube URL');
   }
 
   const videoId = videoIdMatch[1];
+  const cleanVideoId = videoId.split('?')[0].split('&')[0];
 
   // FIX: always set type as 'video'
   const metadata = {
     videoId,
     type: 'video',
     title: 'YouTube Video',
-    thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/${cleanVideoId}/hqdefault.jpg`,
     embedUrl: `https://www.youtube.com/embed/${videoId}`,
   };
 

@@ -53,3 +53,18 @@ export const queueEmbeddingJob = async (itemId) => {
     console.error('Error queueing embedding job:', error);
   }
 };
+export const queueHighlightTaggingJob = async (highlightId) => {
+  try {
+    await taggingQueue.add(
+      'tag-highlight',
+      { highlightId },
+      {
+        attempts: 2,
+        backoff: { type: 'exponential', delay: 2000 },
+        removeOnComplete: true,
+      }
+    );
+  } catch (error) {
+    console.error('Error queueing highlight tagging job:', error);
+  }
+};

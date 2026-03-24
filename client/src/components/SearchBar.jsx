@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Search as SearchIcon, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "../utils/cn";
+import { toast } from "react-hot-toast";
 
 const placeholders = [
   "Find that article about LLMs...",
@@ -58,11 +59,15 @@ const SearchBar = ({ value, onChange, className }) => {
 
       {/* Semantic Search badge */}
       <div className="absolute inset-y-2 md:inset-y-3 right-2 md:right-3 flex items-center z-10">
-        <div className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-3 bg-white/5 rounded-xl md:rounded-2xl border border-white/10 text-[10px] md:text-xs font-mono text-gray-400 group-focus-within:border-indigo/30 transition-colors whitespace-nowrap">
-          <Sparkles size={12} className="text-amber shrink-0" />
+        <button 
+          type="button"
+          onClick={() => toast.success("AI-powered semantic search is active!")}
+          className="flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2 md:py-3 bg-indigo/10 rounded-xl md:rounded-2xl border border-indigo/20 text-[10px] md:text-xs font-mono text-indigo-light group-focus-within:border-indigo/50 hover:bg-indigo/20 transition-all whitespace-nowrap active:scale-95"
+        >
+          <Sparkles size={12} className="text-amber shrink-0 animate-pulse" />
           <span className="hidden sm:inline">Semantic Search</span>
           <span className="sm:hidden">AI</span>
-        </div>
+        </button>
       </div>
     </div>
   );

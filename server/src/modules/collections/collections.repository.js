@@ -31,7 +31,8 @@ export class CollectionsRepository {
   async addItemToCollection(collectionId, userId, itemId) {
     const collection = await Collection.findOne({ _id: collectionId, user: userId });
     if (collection) {
-      if (!collection.items.includes(itemId)) {
+      const itemIdStr = itemId.toString();
+      if (!collection.items.some(id => id.toString() === itemIdStr)) {
         collection.items.push(itemId);
         return await collection.save();
       }
