@@ -1,9 +1,12 @@
 import client from "./client";
 
-export const searchItems = async (query) => {
-  const response = await client.get(`/search?q=${query}`);
+// Fix #4: Accept optional searchType to toggle between normal and semantic search
+export const searchItems = async (query, searchType = 'normal') => {
+  const endpoint = searchType === 'semantic' ? `/search/semantic?q=${encodeURIComponent(query)}` : `/search?q=${encodeURIComponent(query)}`;
+  const response = await client.get(endpoint);
   return response.data.data;
 };
+
 
 export const getHighlights = async () => {
   const response = await client.get("/highlights");

@@ -64,21 +64,22 @@ export const extractYouTubeMetadata = async (url) => {
     throw new Error('Invalid YouTube URL');
   }
 
-  const videoId = videoIdMatch[1];
-  const cleanVideoId = videoId.split('?')[0].split('&')[0];
+  // Clean videoId by stripping any query params like ?t= or &list=
+  const rawVideoId = videoIdMatch[1];
+  const cleanVideoId = rawVideoId.split('?')[0].split('&')[0];
 
-  // FIX: always set type as 'video'
   const metadata = {
-    videoId,
+    videoId: cleanVideoId,
     type: 'video',
-    title: 'YouTube Video',
+    title:rawVideoId, 
     thumbnail: `https://img.youtube.com/vi/${cleanVideoId}/hqdefault.jpg`,
-    embedUrl: `https://www.youtube.com/embed/${videoId}`,
+    embedUrl: `https://www.youtube.com/embed/${cleanVideoId}`,
   };
 
+  // Try oEmbed first (no API key needed)
   try {
     const oEmbed = await axios.get(
-      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${cleanVideoId}&format=json`,
       { timeout: 5000 }
     );
     if (oEmbed.data?.title) {
@@ -87,13 +88,13 @@ export const extractYouTubeMetadata = async (url) => {
       metadata.thumbnail = oEmbed.data.thumbnail_url || metadata.thumbnail;
     }
   } catch (e) {
-    // oEmbed failed, use fallback
   }
 
+  // Try YouTube Data API if key is configured (overrides oEmbed)
   if (config.youtube?.apiKey) {
     try {
       const response = await axios.get(
-        `https://www.googleapis.com/youtube/v3/videos?id=${videoId}&key=${config.youtube.apiKey}&part=snippet`
+        `https://www.googleapis.com/youtube/v3/videos?id=${cleanVideoId}&key=${config.youtube.apiKey}&part=snippet`
       );
 
       if (response.data.items && response.data.items.length > 0) {

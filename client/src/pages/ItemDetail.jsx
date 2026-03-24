@@ -193,7 +193,12 @@ const ItemDetail = () => {
         {isImage && (item.thumbnail || item.filePath) && (
           <div className="mb-8 rounded-2xl overflow-hidden bg-black/20">
             <img
-              src={item.thumbnail || `http://localhost:3000/${item.filePath}`}
+              src={(() => {
+                if (item.thumbnail) return item.thumbnail;
+                const origin = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/v1").replace(/\/v\d+$/, "");
+                const clean = item.filePath.replace(/^\/?uploads\//, "");
+                return `${origin}/uploads/${clean}`;
+              })()}
               alt={item.title}
               className="w-full max-h-[600px] object-contain"
               onError={(e) => { e.target.style.display = "none"; }}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { 
   FileText, Twitter, Youtube, FileJson, 
@@ -11,6 +11,18 @@ import * as itemsApi from "../api/items.api";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "../utils/cn";
 
+// Fix #3: derive server origin (strip /v1 path from API base URL)
+const SERVER_ORIGIN = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/v1").replace(/\/v\d+$/, "");
+
+// Build URL for uploaded files — filePath is stored as 'uploads/filename.png'
+// Static server maps GET /uploads → server/uploads/, so URL is SERVER_ORIGIN/uploads/filename.png
+const getUploadUrl = (filePath) => {
+  if (!filePath) return null;
+  // Normalize: ensure we never double-prefix 'uploads/'
+  const clean = filePath.replace(/^\/?uploads\//, "");
+  return `${SERVER_ORIGIN}/uploads/${clean}`;
+};
+
 const typeIcons = {
   article: FileText,
   tweet: Twitter,
@@ -20,9 +32,14 @@ const typeIcons = {
 };
 
 const ItemCard = ({ item, index, isResurface = false }) => {
+  // Fix #5: skip rendering cards with no/empty title
+  if (!item?.title || item.title.trim() === "") return null;
+
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const Icon = typeIcons[item.type] || FileText;
+  // Fix #6: Layers button state
+  const [isGrouped, setIsGrouped] = useState(false);
 
   let domain = "note";
   try {
@@ -52,6 +69,8 @@ const ItemCard = ({ item, index, isResurface = false }) => {
     }
   };
 
+  // Fix #3: build correct URL for uploaded images
+  const uploadedImageUrl = getUploadUrl(item.filePath);
   const hasThumbnail = !!(item.thumbnail || (item.type === "image" && item.filePath));
 
   return (
@@ -61,17 +80,15 @@ const ItemCard = ({ item, index, isResurface = false }) => {
       transition={{ delay: index * 0.05 }}
       whileHover={{ y: -4 }}
       className={cn(
-        // overflow-hidden HERE so shadow stays inside card boundary
-        "glass group rounded-2xl overflow-hidden flex flex-col h-[280px] border border-white/5 cursor-pointer",
+      "glass group rounded-2xl overflow-hidden flex flex-col h-[280px] border border-white/5 cursor-pointer",
         isResurface && "border-amber/20"
       )}
       onClick={() => navigate(`/items/${item._id}`)}
     >
-      {/* Thumbnail strip — fixed 120px height, only shown when image exists */}
-      {hasThumbnail && (
+     {hasThumbnail && (
         <div className="w-full h-[120px] flex-shrink-0 bg-black/20">
           <img
-            src={item.thumbnail || `http://localhost:3000/${item.filePath}`}
+            src={item.thumbnail || uploadedImageUrl}
             alt={item.title}
             className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
             onError={(e) => { e.target.parentElement.style.display = "none"; }}
@@ -103,7 +120,19 @@ const ItemCard = ({ item, index, isResurface = false }) => {
                 <button onClick={handleShare} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white">
                   <Share2 size={16} />
                 </button>
-                <button className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white">
+                {/* Fix #6: Layers button now toggles grouped view */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsGrouped((prev) => !prev);
+                    toast(isGrouped ? "Ungrouped view" : "Grouped view", { icon: "▤" });
+                  }}
+                  className={cn(
+                    "p-2 hover:bg-white/5 rounded-lg transition-colors",
+                    isGrouped ? "text-indigo" : "text-gray-400 hover:text-white"
+                  )}
+                  title={isGrouped ? "Ungroup" : "Group"}
+                >
                   <Layers size={16} />
                 </button>
                 <button onClick={handleDelete} className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-red-400">

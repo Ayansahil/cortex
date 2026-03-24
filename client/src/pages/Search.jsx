@@ -6,7 +6,6 @@ import SearchBar from "../components/SearchBar";
 import ItemCard from "../components/ItemCard";
 import EmptyState from "../components/EmptyState";
 import { useUIStore } from "../stores/uiStore";
-import { cn } from "../utils/cn";
 
 const typeIcons = {
   article: FileText,
@@ -20,6 +19,8 @@ const Search = () => {
   const incrementSearchCount = useUIStore((state) => state.incrementSearchCount);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  // Fix #4: track semantic search toggle
+  const [isSemanticSearch, setIsSemanticSearch] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 300);
@@ -27,8 +28,11 @@ const Search = () => {
   }, [query]);
 
   const { data: results, isLoading, isSuccess } = useQuery({
-    queryKey: ["search", debouncedQuery],
-    queryFn: () => query ? searchApi.searchItems(debouncedQuery) : Promise.resolve([]),
+    queryKey: ["search", debouncedQuery, isSemanticSearch],
+    queryFn: () =>
+      debouncedQuery
+        ? searchApi.searchItems(debouncedQuery, isSemanticSearch ? "semantic" : "normal")
+        : Promise.resolve([]),
     enabled: !!debouncedQuery,
   });
 
@@ -38,7 +42,9 @@ const Search = () => {
     }
   }, [isSuccess, debouncedQuery, incrementSearchCount]);
 
-  const searchItems = results?.items || (Array.isArray(results) ? results : []);
+  // Fix #5: filter out items with empty/missing titles before rendering
+  const rawItems = results?.items || (Array.isArray(results) ? results : []);
+  const searchItems = rawItems.filter((item) => item?.title && item.title.trim() !== "");
 
   const groupedResults = searchItems.reduce((acc, item) => {
     const type = item.type || "other";
@@ -51,13 +57,27 @@ const Search = () => {
     <div className="space-y-10 md:space-y-16 py-8 md:py-12 pb-24 md:pb-12">
       <section className="max-w-3xl mx-auto text-center space-y-6 md:space-y-8 px-4">
         <h1 className="text-3xl md:text-5xl font-bold font-heading tracking-tight">Search Your Memory</h1>
-        <SearchBar value={query} onChange={setQuery} />
+        {/* Fix #4: pass toggle props to SearchBar */}
+        <SearchBar
+          value={query}
+          onChange={setQuery}
+          isSemanticSearch={isSemanticSearch}
+          onToggleSemantic={() => setIsSemanticSearch((prev) => !prev)}
+        />
+        {/* Fix #4: visible indicator so user knows mode changed */}
+        {isSemanticSearch && (
+          <p className="text-xs font-mono text-indigo/70 animate-pulse">
+            ✦ AI semantic search active — results ranked by meaning, not just keyword
+          </p>
+        )}
       </section>
 
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-20 gap-4">
           <Loader2 className="w-10 h-10 text-indigo animate-spin" />
-          <p className="text-gray-500 font-mono text-xs uppercase tracking-widest">Scanning network...</p>
+          <p className="text-gray-500 font-mono text-xs uppercase tracking-widest">
+            {isSemanticSearch ? "Running semantic scan..." : "Scanning network..."}
+          </p>
         </div>
       )}
 
@@ -87,9 +107,9 @@ const Search = () => {
       )}
 
       {!isLoading && debouncedQuery && searchItems.length === 0 && (
-        <EmptyState 
-          title="No fragments found" 
-          message={`We couldn't find anything matching "${debouncedQuery}" in your brain.`} 
+        <EmptyState
+          title="No fragments found"
+          message={`We couldn't find anything matching "${debouncedQuery}" in your brain.`}
           icon={SearchIcon}
         />
       )}

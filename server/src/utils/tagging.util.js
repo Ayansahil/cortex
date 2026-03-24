@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import config from '../core/config/env.config.js';
 
-// FIX: OpenRouter compatible — free model
+// OpenRouter compatible — free model
 const openai = new OpenAI({
   apiKey: config.openai.apiKey,
   baseURL: config.openai.baseURL || 'https://openrouter.ai/api/v1',
@@ -40,7 +40,7 @@ Respond in JSON format only, no explanation:
 }`;
 
     const response = await openai.chat.completions.create({
-      // FIX: Free model on OpenRouter
+      // Free model on OpenRouter
       model: config.openai.model || 'google/gemma-3-27b-it:free',
       messages: [
         {

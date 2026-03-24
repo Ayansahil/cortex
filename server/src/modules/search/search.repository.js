@@ -1,6 +1,23 @@
 import { Item, Embedding, Relation } from '../../core/database/models/index.js';
 
 export class SearchRepository {
+  // Case-insensitive normal search using $options: 'i'
+  async normalSearch(userId, query, limit = 20) {
+    return await Item.find({
+      user: userId,
+      $or: [
+        { title: { $regex: query, $options: 'i' } },
+        { content: { $regex: query, $options: 'i' } },
+        { excerpt: { $regex: query, $options: 'i' } },
+        { tags: { $in: [new RegExp(query, 'i')] } },
+        { 'autoTags.tag': { $regex: query, $options: 'i' } },
+      ],
+    })
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean();
+  }
+
   async findSimilarItems(userId, similarities) {
     const itemIds = similarities.map(s => s.itemId);
     const items = await Item.find({ _id: { $in: itemIds }, user: userId }).lean();
