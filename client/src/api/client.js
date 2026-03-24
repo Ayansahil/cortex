@@ -9,6 +9,7 @@ const client = axios.create({
     "Content-Type": "application/json",
   },
 });
+console.log("API URL:", import.meta.env.VITE_API_BASE_URL);
 
 // Request interceptor to attach JWT token
 client.interceptors.request.use(
