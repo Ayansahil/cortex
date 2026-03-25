@@ -10,18 +10,10 @@ import { toast } from "react-hot-toast";
 import * as itemsApi from "../api/items.api";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "../utils/cn";
+import { getUploadUrl } from "../utils/url";
 
-// Fix #3: derive server origin (strip /v1 path from API base URL)
-const SERVER_ORIGIN = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/v1").replace(/\/v\d+$/, "");
 
-// Build URL for uploaded files — filePath is stored as 'uploads/filename.png'
-// Static server maps GET /uploads → server/uploads/, so URL is SERVER_ORIGIN/uploads/filename.png
-const getUploadUrl = (filePath) => {
-  if (!filePath) return null;
-  // Normalize: ensure we never double-prefix 'uploads/'
-  const clean = filePath.replace(/^\/?uploads\//, "");
-  return `${SERVER_ORIGIN}/uploads/${clean}`;
-};
+
 
 const typeIcons = {
   article: FileText,
@@ -71,6 +63,7 @@ const ItemCard = ({ item, index, isResurface = false }) => {
 
   // Fix #3: build correct URL for uploaded images
   const uploadedImageUrl = getUploadUrl(item.filePath);
+
   const hasThumbnail = !!(item.thumbnail || (item.type === "image" && item.filePath));
 
   return (

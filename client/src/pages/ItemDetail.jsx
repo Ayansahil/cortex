@@ -21,6 +21,8 @@ import { toast } from "react-hot-toast";
 import HighlightPopover from "../components/items/HighlightPopover";
 import ItemCard from "../components/ItemCard";
 import { cn } from "../utils/cn";
+import { getUploadUrl } from "../utils/url";
+
 
 const ItemDetail = () => {
   const { id } = useParams();
@@ -193,12 +195,8 @@ const ItemDetail = () => {
         {isImage && (item.thumbnail || item.filePath) && (
           <div className="mb-8 rounded-2xl overflow-hidden bg-black/20">
             <img
-              src={(() => {
-                if (item.thumbnail) return item.thumbnail;
-                const origin = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/v1").replace(/\/v\d+$/, "");
-                const clean = item.filePath.replace(/^\/?uploads\//, "");
-                return `${origin}/uploads/${clean}`;
-              })()}
+                src={item.thumbnail || getUploadUrl(item.filePath)}
+
               alt={item.title}
               className="w-full max-h-[600px] object-contain"
               onError={(e) => { e.target.style.display = "none"; }}
