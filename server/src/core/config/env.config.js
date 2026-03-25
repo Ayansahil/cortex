@@ -65,6 +65,12 @@ const config = {
   youtube: {
     apiKey: process.env.YOUTUBE_API_KEY || '',
   },
+
+  imagekit: {
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY || '',
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || '',
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || '',
+  },
 };
 
 export default config;

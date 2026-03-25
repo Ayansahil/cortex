@@ -1,5 +1,7 @@
 import app from './app.js';
 import database from './core/database/connection.js';
+import './workers/tagging.worker.js';
+import './workers/embedding.worker.js';
 
 const PORT = process.env.PORT || 3000;
 

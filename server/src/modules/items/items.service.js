@@ -7,6 +7,10 @@ import {
 } from '../../utils/contentExtractor.util.js';
 import { queueEmbeddingJob, queueTaggingJob } from '../../workers/queue.js';
 import { HighlightsRepository } from '../highlights/highlights.repository.js';
+import fs from 'fs';
+import path from 'path';
+import config from '../../core/config/env.config.js';
+import { uploadToImageKit } from '../../utils/imagekit.util.js';
 
 // FIX 2: Twitter/X URL detection
 const isTwitterURL = (url) => {
@@ -97,7 +101,6 @@ export class ItemsService {
 
     // File upload handling
     if (file) {
-      processedData.filePath = file.path;
       processedData.fileSize = file.size;
       processedData.mimeType = file.mimetype;
 
@@ -117,9 +120,38 @@ export class ItemsService {
         processedData.title = file.originalname || 'Uploaded File';
       }
 
+      // Handle ImageKit for images
+      if (file.mimetype.startsWith('image/')) {
+        try {
+          const ikResponse = await uploadToImageKit(file.buffer, file.originalname);
+          processedData.filePath = ikResponse.url;
+        } catch (error) {
+          console.error('ImageKit upload error in service:', error);
+          // Fallback to local storage if ImageKit fails? 
+          // The request said "Implement ImageKit ONLY for image uploads". 
+          // If it fails, I'll let it throw for now or handle it.
+          throw error;
+        }
+      } else {
+        // Local storage for PDFs/videos
+        const uploadPath = config.upload?.path || 'uploads';
+        if (!fs.existsSync(uploadPath)) {
+          fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const ext = path.extname(file.originalname);
+        const fileName = `${file.fieldname}-${uniqueSuffix}${ext}`;
+        const fullPath = path.join(uploadPath, fileName);
+        
+        fs.writeFileSync(fullPath, file.buffer);
+        processedData.filePath = path.join('uploads', fileName); // Save relative path
+      }
+
       if (file.mimetype === 'application/pdf') {
         try {
-          const pdfData = await extractPDFContent(file.path);
+          // Note: Since we saved it to fullPath, extractPDFContent should work with it
+          const pdfData = await extractPDFContent(path.join(config.upload?.path || 'uploads', path.basename(processedData.filePath)));
           processedData.content = pdfData.content;
           processedData.wordCount = pdfData.wordCount;
           processedData.readingTime = pdfData.readingTime;

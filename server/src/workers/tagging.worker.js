@@ -21,8 +21,9 @@ const taggingWorker = new Worker(
       if (itemId) {
         const item = await Item.findById(itemId);
         if (!item) throw new Error(`Item ${itemId} not found`);
-        const { tags, topics } = await generateTags(item.title, item.content || '');
-        item.autoTags = tags;
+        const { autoTags, tags, topics } = await generateTags(item.title, item.content || '');
+        item.autoTags = autoTags;
+        item.tags = tags;
         item.topics = topics;
         await item.save();
         console.log(`Completed tagging for item ${itemId}`);
@@ -30,7 +31,8 @@ const taggingWorker = new Worker(
         const { Highlight } = await import('../core/database/models/index.js');
         const highlight = await Highlight.findById(highlightId);
         if (!highlight) throw new Error(`Highlight ${highlightId} not found`);
-        const { tags } = await generateTags('', highlight.text);
+        const { autoTags, tags } = await generateTags('', highlight.text);
+        highlight.autoTags = autoTags;
         highlight.tags = tags;
         await highlight.save();
         console.log(`Completed tagging for highlight ${highlightId}`);

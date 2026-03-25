@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import AuthLayout from "../layouts/AuthLayout";
 import * as authApi from "../api/auth.api";
+import { Eye, EyeOff } from "lucide-react";
 
 const schema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
@@ -15,6 +16,7 @@ const schema = z.object({
 
 const Register = () => {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
@@ -57,12 +59,21 @@ const Register = () => {
 
         <div>
           <label className="block text-xs font-mono uppercase tracking-wider text-gray-400 mb-2">Password</label>
-          <input
-            {...register("password")}
-            type="password"
-            className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo transition-colors font-mono"
-            placeholder="••••••••"
-          />
+          <div className="relative">
+            <input
+              {...register("password")}
+              type={showPassword ? "text" : "password"}
+              className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo transition-colors font-mono pr-12"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} /> }
+            </button>
+          </div>
           {errors.password && <p className="text-red-400 text-xs mt-1 font-mono">{errors.password.message}</p>}
         </div>
 

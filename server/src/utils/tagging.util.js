@@ -14,10 +14,10 @@ const openai = new OpenAI({
 export const generateTags = async (title, content) => {
   try {
     if (!config.openai.apiKey) {
-      // Fallback: extract keywords locally without AI
       const keywords = extractKeywords(`${title} ${content}`);
       return {
-        tags: keywords.map(k => ({ tag: k, confidence: 0.6 })),
+        autoTags: keywords.map(k => ({ tag: k.toLowerCase(), confidence: 0.6 })),
+        tags: keywords.map(k => k.toLowerCase()),
         topics: [],
       };
     }
@@ -40,7 +40,6 @@ Respond in JSON format only, no explanation:
 }`;
 
     const response = await openai.chat.completions.create({
-      // Free model on OpenRouter
       model: config.openai.model || 'google/gemma-3-27b-it:free',
       messages: [
         {
@@ -57,23 +56,57 @@ Respond in JSON format only, no explanation:
     });
 
     const raw = response.choices[0].message.content.trim();
-    // Strip markdown code blocks if model wraps in ```json
     const clean = raw.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(clean);
+    
+    let result;
+    try {
+      result = JSON.parse(clean);
+    } catch (e) {
+      console.warn('DEBUG: Failed to parse AI response as JSON:', clean);
+      throw new Error('Invalid JSON from AI');
+    }
+
+    // Normalization logic
+    let rawTags = [];
+    if (Array.isArray(result)) {
+      rawTags = result; // AI returned [ {tag, confidence}, ... ]
+    } else if (result.tags && Array.isArray(result.tags)) {
+      rawTags = result.tags; // AI returned { tags: [...], topics: [...] }
+    }
+
+    const autoTags = [];
+    const tagsSet = new Set();
+
+    rawTags.forEach(item => {
+      let t = '';
+      let confidence = 0.8;
+
+      if (typeof item === 'string') {
+        t = item.toLowerCase().trim();
+      } else if (typeof item === 'object' && item !== null && item.tag) {
+        t = item.tag.toLowerCase().trim();
+        confidence = item.confidence || 0.7;
+      }
+
+      if (t && !tagsSet.has(t)) {
+        autoTags.push({ tag: t, confidence });
+        tagsSet.add(t);
+      }
+    });
+
+    console.log(`DEBUG: Processed ${autoTags.length} tags for "${title}"`);
 
     return {
-      tags: (result.tags || []).map(tag => ({
-        tag: tag.toLowerCase().trim(),
-        confidence: 0.8,
-      })),
+      autoTags,
+      tags: Array.from(tagsSet),
       topics: result.topics || [],
     };
   } catch (error) {
     console.error('Error generating tags — using keyword fallback:', error.message);
-    // Fallback: always return something even if AI fails
     const keywords = extractKeywords(`${title} ${content}`);
     return {
-      tags: keywords.map(k => ({ tag: k, confidence: 0.5 })),
+      autoTags: keywords.map(k => ({ tag: k.toLowerCase(), confidence: 0.5 })),
+      tags: keywords.map(k => k.toLowerCase()),
       topics: [],
     };
   }

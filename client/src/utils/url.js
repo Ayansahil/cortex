@@ -6,6 +6,11 @@
 export const getUploadUrl = (filePath) => {
   if (!filePath) return null;
 
+  // If filePath is already a full URL (ImageKit), return it directly
+  if (filePath.startsWith('http')) {
+    return filePath;
+  }
+
   // Use the API base URL from env, default to localhost for development
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/v1";
 
