@@ -8,6 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import config from './core/config/env.config.js';
 import { errorHandler, notFound } from './core/middlewares/error.middleware.js';
+import { apiRateLimiter } from './core/middlewares/rateLimit.middleware.js';
 
 import authRoutes from './modules/auth/auth.routes.js';
 import itemsRoutes from './modules/items/items.routes.js';
@@ -45,6 +46,9 @@ app.use('/uploads', (req, res, next) => {
 }, express.static(path.join(__dirname, '..', 'uploads')));
 
 const apiVersion = `/${config.apiVersion}`;
+
+// Apply the rate limiting middleware to all API routes
+app.use(apiVersion, apiRateLimiter);
 
 app.use(`${apiVersion}/auth`, authRoutes);
 app.use(`${apiVersion}/items`, itemsRoutes);
