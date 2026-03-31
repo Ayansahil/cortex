@@ -147,11 +147,6 @@ const ItemCard = ({ item, index, isResurface = false }) => {
                   #{tag}
                 </span>
               ))}
-              {(item.autoTags || []).map((at, i) => (
-                <span key={`${at.tag}-${i}`} className="px-2 py-0.5 rounded-md bg-indigo/5 border border-indigo/10 text-[9px] font-mono text-indigo-light/70 group-hover:border-indigo/20 transition-colors uppercase flex items-center gap-1">
-                  <Sparkles size={8} /> {at.tag}
-                </span>
-              ))}
             </div>
           )}
         </div>

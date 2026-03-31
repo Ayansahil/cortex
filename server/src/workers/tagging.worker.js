@@ -29,6 +29,7 @@ const taggingWorker = new Worker(
         item.keyPoints = analysis.keyPoints;
         item.insight = analysis.insight;
         item.topics = analysis.topics;
+        item.processingStatus = 'completed';
         await item.save();
         console.log(`Completed tagging for item ${itemId}`);
       } else if (highlightId) {
@@ -45,6 +46,21 @@ const taggingWorker = new Worker(
       return { success: true };
     } catch (error) {
       console.error(`Error tagging item:`, error);
+      
+      // Update item status on failure
+      const { itemId } = job.data;
+      if (itemId) {
+        try {
+          const item = await Item.findById(itemId);
+          if (item) {
+            item.processingStatus = 'failed';
+            await item.save();
+          }
+        } catch (e) {
+          console.error('Failed to update item status to failed:', e);
+        }
+      }
+      
       throw error;
     }
   },

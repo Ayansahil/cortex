@@ -79,8 +79,8 @@ const ItemDetail = () => {
   const isImage = item.type === "image";
 
   return (
-    <div className="flex flex-col xl:flex-row gap-12 relative" onMouseUp={handleMouseUp}>
-      <div className="flex-1 max-w-4xl">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 relative" onMouseUp={handleMouseUp}>
+      <div className="lg:col-span-2">
         <button 
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors mb-8 font-mono text-xs uppercase tracking-widest group"
@@ -238,10 +238,6 @@ const ItemDetail = () => {
           </div>
         )}
 
-        <div className="mb-12">
-          <SmartInsights item={item} />
-        </div>
-
         <div className="relative mt-8">
           <div className="flex items-center gap-2 mb-8 ml-2">
             <div className="p-2 rounded-lg bg-white/5 text-gray-500">
@@ -268,7 +264,7 @@ const ItemDetail = () => {
           />
         </div>
 
-        {/* Related Items */}
+        {/* Related Items (Full Width below content) */}
         <section className="mt-20 pt-10 border-t border-white/5">
           <h2 className="text-2xl font-bold font-heading mb-8">Related Items</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -279,52 +275,58 @@ const ItemDetail = () => {
         </section>
       </div>
 
-      {/* Highlights Sidebar */}
-      <aside className="w-full xl:w-80 space-y-8 sticky top-8 h-fit">
-        <div>
-          <h3 className="text-sm font-mono uppercase tracking-widest text-gray-500 mb-6 flex items-center gap-2">
-            <Highlighter size={14} className="text-indigo" /> Highlights ({item.highlights?.length || 0})
-          </h3>
-          <div className="space-y-6">
-            {item.highlights?.map((h, i) => (
-              <motion.div 
-                key={h._id || h.id || `highlight-${i}`}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className={cn(
-                  "p-4 rounded-xl border-l-4 glass relative group",
-                  h.color === "indigo" ? "border-indigo" : h.color === "amber" ? "border-amber" : "border-emerald-500"
-                )}
-              >
-                <button 
-                  onClick={async () => {
-                    if (window.confirm("Delete this highlight?")) {
-                      try {
-                        await hApi.deleteHighlight(h._id || h.id);
-                        queryClient.invalidateQueries({ queryKey: ["item", item._id] });
-                        toast.success("Highlight deleted");
-                      } catch (err) {
-                        toast.error("Failed to delete highlight");
-                      }
-                    }
-                  }}
-                  className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-400"
+      {/* Right Sidebar (1/3) */}
+      <aside className="lg:col-span-1 space-y-12">
+        <div className="sticky top-8 space-y-10">
+          <div>
+            <SmartInsights item={item} />
+          </div>
+
+          <div>
+            <h3 className="text-xs font-mono uppercase tracking-widest text-gray-500 mb-6 flex items-center gap-2">
+              <Highlighter size={14} className="text-indigo" /> Highlights ({item.highlights?.length || 0})
+            </h3>
+            <div className="space-y-6">
+              {item.highlights?.map((h, i) => (
+                <motion.div 
+                  key={h._id || h.id || `highlight-${i}`}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className={cn(
+                    "p-4 rounded-xl border-l-4 glass relative group",
+                    h.color === "indigo" ? "border-indigo" : h.color === "amber" ? "border-amber" : "border-emerald-500"
+                  )}
                 >
-                  <Trash2 size={12} />
-                </button>
-                <p className="text-sm italic text-gray-300 leading-snug">"{h.text}"</p>
-                {h.note && (
-                   <div className="flex gap-2 items-start pt-3 mt-3 border-t border-white/5 text-xs text-gray-400">
-                    <MessageSquare size={12} className="shrink-0 mt-0.5" />
-                    <p>{h.note}</p>
-                   </div>
-                )}
-              </motion.div>
-            ))}
-            {(!item.highlights || item.highlights.length === 0) && (
-              <p className="text-gray-600 font-mono text-[10px] text-center italic py-2">Select text on the left to create highlights.</p>
-            )}
+                  <button 
+                    onClick={async () => {
+                      if (window.confirm("Delete this highlight?")) {
+                        try {
+                          await hApi.deleteHighlight(h._id || h.id);
+                          queryClient.invalidateQueries({ queryKey: ["item", item._id] });
+                          toast.success("Highlight deleted");
+                        } catch (err) {
+                          toast.error("Failed to delete highlight");
+                        }
+                      }
+                    }}
+                    className="absolute top-2 right-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-400"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                  <p className="text-sm italic text-gray-300 leading-snug">"{h.text}"</p>
+                  {h.note && (
+                     <div className="flex gap-2 items-start pt-3 mt-3 border-t border-white/5 text-xs text-gray-400">
+                      <MessageSquare size={12} className="shrink-0 mt-0.5" />
+                      <p>{h.note}</p>
+                     </div>
+                  )}
+                </motion.div>
+              ))}
+              {(!item.highlights || item.highlights.length === 0) && (
+                <p className="text-gray-600 font-mono text-[10px] text-center italic py-2">Select text to create highlights.</p>
+              )}
+            </div>
           </div>
         </div>
       </aside>
