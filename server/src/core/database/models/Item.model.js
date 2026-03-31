@@ -99,6 +99,24 @@ const itemSchema = new mongoose.Schema(
     wordCount: {
       type: Number,
     },
+    summary: {
+      type: String,
+      trim: true,
+    },
+    analysisDescription: {
+      type: String,
+      trim: true,
+    },
+    keyPoints: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    insight: {
+      type: String,
+      trim: true,
+    },
     lastViewedAt: {
       type: Date,
     },

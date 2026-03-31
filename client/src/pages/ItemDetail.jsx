@@ -11,7 +11,8 @@ import {
   MessageSquare,
   Clock,
   Twitter,
-  Plus
+  Plus,
+  BookOpen
 } from "lucide-react";
 import * as itemsApi from "../api/items.api";
 import * as hApi from "../api/search-highlights.api";
@@ -22,6 +23,7 @@ import HighlightPopover from "../components/items/HighlightPopover";
 import ItemCard from "../components/ItemCard";
 import { cn } from "../utils/cn";
 import { getUploadUrl } from "../utils/url";
+import SmartInsights from "../components/items/SmartInsights";
 
 
 const ItemDetail = () => {
@@ -236,7 +238,17 @@ const ItemDetail = () => {
           </div>
         )}
 
-        <div className="relative">
+        <div className="mb-12">
+          <SmartInsights item={item} />
+        </div>
+
+        <div className="relative mt-8">
+          <div className="flex items-center gap-2 mb-8 ml-2">
+            <div className="p-2 rounded-lg bg-white/5 text-gray-500">
+              <BookOpen size={16} />
+            </div>
+            <h4 className="text-sm font-mono uppercase tracking-widest text-gray-500">Full Content</h4>
+          </div>
           <div 
             ref={contentRef}
             className="prose prose-invert max-w-none text-gray-300 leading-relaxed text-lg font-sans"

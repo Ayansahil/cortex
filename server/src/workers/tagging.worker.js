@@ -21,10 +21,14 @@ const taggingWorker = new Worker(
       if (itemId) {
         const item = await Item.findById(itemId);
         if (!item) throw new Error(`Item ${itemId} not found`);
-        const { autoTags, tags, topics } = await generateTags(item.title, item.content || '');
-        item.autoTags = autoTags;
-        item.tags = tags;
-        item.topics = topics;
+        const analysis = await generateTags(item.title, item.content || '');
+        item.autoTags = analysis.autoTags;
+        item.tags = analysis.tags;
+        item.summary = analysis.summary;
+        item.analysisDescription = analysis.analysisDescription;
+        item.keyPoints = analysis.keyPoints;
+        item.insight = analysis.insight;
+        item.topics = analysis.topics;
         await item.save();
         console.log(`Completed tagging for item ${itemId}`);
       } else if (highlightId) {

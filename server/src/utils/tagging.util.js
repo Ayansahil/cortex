@@ -11,6 +11,27 @@ const openai = new OpenAI({
   },
 });
 
+const SYSTEM_PROMPT = `You are an intelligent knowledge system.
+
+Analyze the given content (video, pdf, article, image or link) and generate structured output for a knowledge app.
+
+Return STRICT JSON:
+
+{
+  "summary": "short 2-3 line summary",
+  "description": "well formatted explanation like notes (4-6 lines)",
+  "keyPoints": ["point 1", "point 2", "point 3"],
+  "tags": ["only", "string", "tags"],
+  "insight": "main takeaway from this content"
+}
+
+Rules:
+- tags MUST be array of strings only
+- do NOT return objects in tags
+- keep summary short and clean
+- description should be readable and useful
+- generate meaningful insights even if input is small`;
+
 export const generateTags = async (title, content) => {
   try {
     if (!config.openai.apiKey) {
@@ -22,37 +43,23 @@ export const generateTags = async (title, content) => {
       };
     }
 
-    const text = `${title}\n\n${content}`.substring(0, 2000);
-
-    const prompt = `Analyze the following content and provide:
-1. 5-10 relevant tags (single words or short phrases)
-2. 3-5 main topics with relevance scores (0-1)
-
-Content:
-${text}
-
-Respond in JSON format only, no explanation:
-{
-  "tags": ["tag1", "tag2"],
-  "topics": [
-    {"name": "topic1", "score": 0.9}
-  ]
-}`;
+    const text = `${title}\n\n${content}`.substring(0, 4000);
 
     const response = await openai.chat.completions.create({
       model: config.openai.model || 'google/gemma-3-27b-it:free',
       messages: [
         {
           role: 'system',
-          content: 'You are a content analysis assistant. Always respond with valid JSON only.',
+          content: SYSTEM_PROMPT,
         },
         {
           role: 'user',
-          content: prompt,
+          content: `Analyze this content:\n\n${text}`,
         },
       ],
       temperature: 0.3,
-      max_tokens: 500,
+      max_tokens: 1000,
+      response_format: { type: "json_object" }
     });
 
     const raw = response.choices[0].message.content.trim();
@@ -66,40 +73,21 @@ Respond in JSON format only, no explanation:
       throw new Error('Invalid JSON from AI');
     }
 
-    // Normalization logic
-    let rawTags = [];
-    if (Array.isArray(result)) {
-      rawTags = result; // AI returned [ {tag, confidence}, ... ]
-    } else if (result.tags && Array.isArray(result.tags)) {
-      rawTags = result.tags; // AI returned { tags: [...], topics: [...] }
-    }
+    // Flatten tags as requested (STRICT strings only)
+    const tags = Array.isArray(result.tags) 
+      ? result.tags.map(t => typeof t === 'string' ? t.toLowerCase().trim() : String(t).toLowerCase()) 
+      : [];
 
-    const autoTags = [];
-    const tagsSet = new Set();
-
-    rawTags.forEach(item => {
-      let t = '';
-      let confidence = 0.8;
-
-      if (typeof item === 'string') {
-        t = item.toLowerCase().trim();
-      } else if (typeof item === 'object' && item !== null && item.tag) {
-        t = item.tag.toLowerCase().trim();
-        confidence = item.confidence || 0.7;
-      }
-
-      if (t && !tagsSet.has(t)) {
-        autoTags.push({ tag: t, confidence });
-        tagsSet.add(t);
-      }
-    });
-
-    console.log(`DEBUG: Processed ${autoTags.length} tags for "${title}"`);
+    const autoTags = tags.map(t => ({ tag: t, confidence: 0.9 }));
 
     return {
       autoTags,
-      tags: Array.from(tagsSet),
-      topics: result.topics || [],
+      tags,
+      summary: result.summary || '',
+      analysisDescription: result.description || '',
+      keyPoints: result.keyPoints || [],
+      insight: result.insight || '',
+      topics: [], // We are moving away from raw topics to more structured keyPoints
     };
   } catch (error) {
     console.error('Error generating tags — using keyword fallback:', error.message);
